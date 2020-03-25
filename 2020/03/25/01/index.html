@@ -17,17 +17,19 @@
   
   <title>数据库事务与ThreadLocal | Hexo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="事务与ThreadLocal 1. 原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。  2. 一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。 3. 隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。 4.">
+  <meta name="description" content="事务与ThreadLocal 事务  性质 原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。  一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。 隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。 持久性（">
 <meta property="og:type" content="article">
 <meta property="og:title" content="数据库事务与ThreadLocal">
 <meta property="og:url" content="https://i-icherry.github.io.git/2020/03/25/01/index.html">
 <meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="事务与ThreadLocal 1. 原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。  2. 一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。 3. 隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。 4.">
+<meta property="og:description" content="事务与ThreadLocal 事务  性质 原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。  一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。 隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。 持久性（">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=3712186402,1778434040&amp;fm=11&amp;gp=0.jpg">
 <meta property="article:published_time" content="2020-03-25T04:53:43.047Z">
-<meta property="article:modified_time" content="2020-03-25T10:01:46.013Z">
+<meta property="article:modified_time" content="2020-03-25T10:38:45.087Z">
 <meta property="article:author" content="Cherry">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=3712186402,1778434040&amp;fm=11&amp;gp=0.jpg">
   
     <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
   
@@ -163,12 +165,74 @@
         </div>
         <div class="content" style="overflow: auto">
             <hr>
-<h3 id="事务与ThreadLocal"><a href="#事务与ThreadLocal" class="headerlink" title="事务与ThreadLocal"></a>事务与ThreadLocal</h3><font face="宋体" size="3">
-1. 原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。<br> 
-2. 一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。<br>
-3. 隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。<br>
-4. 持久性（Durability）持久性是指一个事务一旦被提交，它对数据库中数据的改变就是永久性的，接下来即使数据库发生故障也不应该对其有任何影响。
-</font><br>
+<p><img src="https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=3712186402,1778434040&amp;fm=11&amp;gp=0.jpg" alt="shuage"><br></p>
+<h3 id="事务与ThreadLocal"><a href="#事务与ThreadLocal" class="headerlink" title="事务与ThreadLocal"></a>事务与ThreadLocal</h3><ol>
+<li><p><strong>事务</strong></p>
+<ol>
+<li>性质<ol>
+<li>原子性（Atomicity）原子性是指事务是一个不可分割的工作单位，事务中的操要么都发生，要么都不发生。<br> </li>
+<li>一致性（Consistency）一个事务中，事务前后数据的完整性必须保持一致。<br></li>
+<li>隔离性（Isolation）多个事务，事务的隔离性是指多个用户并发访问数据库时，一个用户的事务不能被其它用户的事务所干扰，多个并发事务之间数据要相互隔离。<br></li>
+<li>持久性（Durability）持久性是指一个事务一旦被提交，它对数据库中数据的改变就是永久性的，接下来即使数据库发生故障也不应该对其有任何影响。<br></li>
+</ol>
+</li>
+<li>并发访问问题（隔离性引起）<ol>
+<li>脏读：B事务读取到了A事务尚未提交的数据，要求B事务要读取A事    务提交的数据<br></li>
+<li>不可重复读：一个事务中 两次读取的数据的内容不一致,要求的是一个事务中多次读取时数据是一致的(unpdate)<br></li>
+<li>幻读/虚读：一个事务中 两次读取的数据的数量不一致要求在一个事务多次读取的数据的数量是一致的(insert/delete<br></li>
+</ol>
+</li>
+<li>事务隔离级别<ol>
+<li>read uncommitted : 读取尚未提交的数据 ：哪个问题都不能解决<br></li>
+<li>read committed：读取已经提交的数据 ：可以解决脏读 —- oracle默认的<br></li>
+<li>repeatable read：重读读取：可以解决脏读 和 不可重复读 —mysql默认的<br></li>
+<li>serializable：串行化：可以解决 脏读 不可重复读 和 虚读—相当于锁表<br><br></li>
+</ol>
+</li>
+</ol>
+</li>
+<li><p><strong>JDBC事务控制</strong></p>
+<ol>
+<li>开启事务：conn.setAutoCommit(false);<br></li>
+<li>提交：conn.commit()；<br></li>
+<li>回滚：conn.rollback()；<br><br></li>
+</ol>
+</li>
+<li><p><strong>MySql事务控制</strong></p>
+<ol>
+<li>开启事务：start transaction;<br></li>
+<li>提交：commit；<br></li>
+<li>回滚：rollback；<br><br></li>
+</ol>
+</li>
+<li><p><strong>ThreadLocal使用</strong><br>public class MyDataSourceUtils {</p>
+<p> //获得Connection —– 从连接池中获取<br> private static ComboPooledDataSource dataSource = new ComboPooledDataSource();</p>
+<p> //创建ThreadLocal<br> private static ThreadLocal<connection> tl = new ThreadLocal<connection>();</connection></connection></p>
+<p> //开启事务<br> public static void startTransaction() throws SQLException{</p>
+<pre><code>Connection conn = getCurrentConnection();
+conn.setAutoCommit(false);</code></pre><p> }</p>
+<p> //获得当前线程上绑定的conn<br> public static Connection getCurrentConnection() throws SQLException{</p>
+<pre><code>//从ThreadLocal寻找 当前线程是否有对应Connection
+Connection conn = tl.get();
+if(conn==null){
+    //获得新的connection
+    conn = getConnection();
+    //将conn资源绑定到ThreadLocal（map）上
+    tl.set(conn);
+}
+return conn;</code></pre><p> }</p>
+<p> public static Connection getConnection() throws SQLException{</p>
+<pre><code>return dataSource.getConnection();</code></pre><p> }</p>
+<p> //回滚事务<br> public static void rollback() throws SQLException {</p>
+<pre><code>getCurrentConnection().rollback();</code></pre><p> }</p>
+<p> //提交事务<br> public static void commit() throws SQLException {</p>
+<pre><code>Connection conn = getCurrentConnection();
+conn.commit();
+//将Connection从ThreadLocal中移除
+tl.remove();
+conn.close();</code></pre><p> }</p>
+</li>
+</ol>
 <script>
         document.querySelectorAll('.github-emoji')
           .forEach(el => {
